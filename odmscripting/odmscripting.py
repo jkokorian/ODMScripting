@@ -16,8 +16,6 @@ class ROISettings(object):
 
 
 class ExposureSettings(object):
-    
-    
     def __init__(self,exposureTime=None, gain=None, blacklevelOffset=None):
         self.exposureTime = exposureTime
         self.gain = gain
@@ -75,7 +73,7 @@ class ODMActionRPC(object):
 class SetImageAcquisitionSettingsRPC(ODMActionRPC):
     def __init__(self,imageAcquisitionSettings=None):
         ODMActionRPC.__init__(self,
-                              method="SetImageAcquisitionParameters",
+                              method="SetImageAcquisitionSettings",
                               params=dict(imageAcquisitionSettings.__dict__))
 
 
@@ -95,10 +93,23 @@ class SetSecondaryDAQOutputVoltageRPC(ODMActionRPC):
                               params=dict(voltage=voltage))
 
 
+class SetROISettingsRPC(ODMActionRPC):
+    def __init__(self,roiSettings=None):
+        ODMActionRPC.__init__(self,
+                              method="SetROISettings",
+                              params=dict(roiSettings.__dict__))
+
+
+class SetExposureSettingsRPC(ODMActionRPC):
+    def __init__(self,exposureSettings=None):
+        ODMActionRPC.__init__(self,
+                              method="SetExposureSettings",
+                              params=dict(exposureSettings.__dict__))
+
 
 class StartMeasurementRPC(ODMActionRPC):
     def __init__(self):
-        ODMActionRPC.__init__(self,"RunMeasurement")
+        ODMActionRPC.__init__(self,"StartMeasurement")
 
 
 
@@ -127,6 +138,12 @@ class ScriptFactory(object):
         
     def SetSecondaryDAQOutputVoltage(self,voltage):
         self.rpcBatch.append(SetSecondaryDAQOutputVoltageRPC(voltage))
+    
+    def SetROISettings(self,roiSettings):
+        self.rpcBatch.append(SetROISettingsRPC(roiSettings))
+        
+    def SetExposureSettings(self,exposureSettings):
+        self.rpcBatch.append(SetExposureSettingsRPC(exposureSettings))
     
     def to_script_file(self, path):
         with file(path,'w') as f:
