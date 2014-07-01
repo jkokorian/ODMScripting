@@ -46,6 +46,12 @@ class ImageAcquisitionSettings(object):
         
     
 
+class DAQOutputChannelSettings(object):
+    
+    def __init__(self,voltage=None,externalAmplification=None):
+        self.voltage = voltage
+        self.externalAmplification = externalAmplification
+
 
 class WaveformType:
     SquareRoot = "SquareRoot"
@@ -86,10 +92,10 @@ class SetActuationSettingsRPC(ODMActionRPC):
 
 
 
-class SetSecondaryDAQOutputVoltageRPC(ODMActionRPC):
+class SetSecondaryDAQOutputSettingsRPC(ODMActionRPC):
     def __init__(self,voltage=None):
         ODMActionRPC.__init__(self,
-                              method="SetSecondaryDAQOutputVoltage",
+                              method="SetSecondaryDAQOutputSettings",
                               params=dict(voltage=voltage))
 
 
@@ -136,8 +142,8 @@ class ScriptFactory(object):
     def SetImageAcquisitionSettings(self,imageAcquisitionSettings):
         self.rpcBatch.append(SetImageAcquisitionSettingsRPC(imageAcquisitionSettings))
         
-    def SetSecondaryDAQOutputVoltage(self,voltage):
-        self.rpcBatch.append(SetSecondaryDAQOutputVoltageRPC(voltage))
+    def SetSecondaryDAQOutputSettings(self,daqOutputChannelSettings):
+        self.rpcBatch.append(SetSecondaryDAQOutputSettingsRPC(daqOutputChannelSettings))
     
     def SetROISettings(self,roiSettings):
         self.rpcBatch.append(SetROISettingsRPC(roiSettings))
