@@ -53,6 +53,8 @@ class DAQOutputChannelSettings(object):
         self.externalAmplification = externalAmplification
 
 
+
+
 class WaveformType:
     SquareRoot = "SquareRoot"
     Triangle = "Triangle"
@@ -69,7 +71,7 @@ class ODMActionRPC(object):
         self.id = str(uuid.uuid4())
     
     def asjson(self):
-        return json.dumps(dict(method=self.method,params=self.params,id=self.id))
+        return json.dumps(dict(method=self.method,params=self.params,id=self.id,jsonrpc="2.0"))
     
     def __repr__(self):
         return self.method
@@ -125,6 +127,12 @@ class PauseExecutionRPC(ODMActionRPC):
                               params=dict(message=message))
 
 
+class ZMQServiceRPC(ODMActionRPC):
+    def __init__(self,endpoint,method,paramsDict):
+        ODMActionRPC.__init__(self,"Ext/%s/%s" % (endpoint,method),
+                              params=paramsDict)
+        
+
 
 class ScriptFactory(object):
     def __init__(self):
@@ -150,6 +158,9 @@ class ScriptFactory(object):
         
     def SetExposureSettings(self,exposureSettings):
         self.rpcBatch.append(SetExposureSettingsRPC(exposureSettings))
+    
+    def CallZMQService(self,zmqServiceRPC):
+        self.rpcBatch.append(zmqServiceRPC)
     
     def to_script_file(self, path):
         with file(path,'w') as f:
