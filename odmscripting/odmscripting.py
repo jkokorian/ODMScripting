@@ -95,10 +95,10 @@ class SetActuationSettingsRPC(ODMActionRPC):
 
 
 class SetSecondaryDAQOutputSettingsRPC(ODMActionRPC):
-    def __init__(self,voltage=None):
+    def __init__(self,daqOutputChannelSettings):
         ODMActionRPC.__init__(self,
                               method="SetSecondaryDAQOutputSettings",
-                              params=dict(voltage=voltage))
+                              params=dict(daqOutputChannelSettings.__dict__))
 
 
 class SetROISettingsRPC(ODMActionRPC):
