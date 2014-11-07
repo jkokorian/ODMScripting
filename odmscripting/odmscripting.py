@@ -138,29 +138,32 @@ class ScriptFactory(object):
     def __init__(self):
         self.rpcBatch = []
     
-    def StartMeasurement(self):
+    def startMeasurement(self):
         self.rpcBatch.append(StartMeasurementRPC())
     
-    def PauseExecution(self,message=""):
+    def pauseExecution(self,message=""):
         self.rpcBatch.append(PauseExecutionRPC(message))
         
-    def SetActuationSettings(self,actuationSettings):
+    def setActuationSettings(self,actuationSettings):
         self.rpcBatch.append(SetActuationSettingsRPC(actuationSettings))
     
-    def SetImageAcquisitionSettings(self,imageAcquisitionSettings):
+    def setImageAcquisitionSettings(self,imageAcquisitionSettings):
         self.rpcBatch.append(SetImageAcquisitionSettingsRPC(imageAcquisitionSettings))
         
-    def SetSecondaryDAQOutputSettings(self,daqOutputChannelSettings):
+    def setSecondaryDAQOutputSettings(self,daqOutputChannelSettings):
         self.rpcBatch.append(SetSecondaryDAQOutputSettingsRPC(daqOutputChannelSettings))
     
-    def SetROISettings(self,roiSettings):
+    def setROISettings(self,roiSettings):
         self.rpcBatch.append(SetROISettingsRPC(roiSettings))
         
-    def SetExposureSettings(self,exposureSettings):
+    def setExposureSettings(self,exposureSettings):
         self.rpcBatch.append(SetExposureSettingsRPC(exposureSettings))
     
-    def CallZMQService(self,zmqServiceRPC):
+    def callZMQService(self,zmqServiceRPC):
         self.rpcBatch.append(zmqServiceRPC)
+        
+    def addRPC(self,odmActionRPC):
+        self.rpcBatch.append(odmActionRPC)
     
     def to_script_file(self, path):
         with file(path,'w') as f:
