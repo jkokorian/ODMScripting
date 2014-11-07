@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='odmscripting',
-      version='1.0',
+      version='2.0',
       description='Toolkit for generating measurement automation scripts for the ODM Acquisition Software.',
       url='http://github.com/jkokorian/odmscripting',
       author='J. Kokorian',
