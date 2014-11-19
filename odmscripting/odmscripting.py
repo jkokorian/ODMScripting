@@ -6,6 +6,13 @@
 import json
 import uuid
 
+def logspace_cumsum(start,sum,steps):
+    """
+    Generate logaritmically spaced numbers such that their sum equals 'sum'.
+    """
+    stopValue = fsolve(lambda stop: sum(logspace(log10(start),stop,steps)) - sum, log10(sum))[0]
+    return logspace(1,stopValue,steps)
+
 
 class ROISettings(object):
     def __init__(self,x=None,y=None,width=None,height=None):
