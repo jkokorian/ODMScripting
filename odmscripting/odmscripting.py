@@ -5,12 +5,14 @@
 
 import json
 import uuid
+from scipy.optimize import fsolve
+from numpy import logspace,log10,sum
 
-def logspace_cumsum(start,sum,steps):
+def logspace_cumsum(start,total,steps):
     """
     Generate logaritmically spaced numbers such that their sum equals 'sum'.
     """
-    stopValue = fsolve(lambda stop: sum(logspace(log10(start),stop,steps)) - sum, log10(sum))[0]
+    stopValue = fsolve(lambda stop: sum(logspace(log10(start),stop,steps)) - total, log10(total))[0]
     return logspace(1,stopValue,steps)
 
 
