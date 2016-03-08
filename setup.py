@@ -12,7 +12,7 @@ setup(name='odmscripting',
           ],
       entry_points='''
         [console_scripts]
-        odms=odms:cli
+        odms=odmscripting.commandline:cli
     ''',
       install_requires=['Click'],
       zip_safe=False)

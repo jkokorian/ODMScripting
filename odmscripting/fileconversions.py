@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import json
 import datetime
+import odmanalysis as odm
 
 def dirIsMeasurementDirWithSettings(path):
     path = os.path.abspath(path)
@@ -38,11 +39,7 @@ def getProperColumnName(columnName):
 
 
 
-def tabulateSettingsAtPath(path):
-    """
-    Gets the settings.json files from all subdirectories in the path that and
-    tabulates them into a single xlsx and hdf5 file.
-    """
+def readMeasurementSettingsAtPath(path):
     experimentDirs = [f for f in os.listdir(path) if dirIsMeasurementDirWithSettings(os.path.join(path,f))]
 
     settings = {}
@@ -59,21 +56,63 @@ def tabulateSettingsAtPath(path):
     dfMetadata = pd.DataFrame(settings).T
 
     dfMetadata.index.rename("measurementName",inplace=True)
+    
+    
+
+    return dfMetadata
+
+
+def flattenSettingsDataFrameColumns(dfMetadata):
+    column_to_dtype_dict = {
+    'timestamp': 'int64',
+    'actuationSettings_actuationFrequency': 'float',
+    'actuationSettings_amplification': 'float',
+    'actuationSettings_amplitude': 'float',
+    'actuationSettings_dcOffset': 'float',
+    'actuationSettings_numberOfCycles': 'int64',
+    'actuationSettings_numberOfSteps': 'int64',
+    'actuationSettings_offsetRampSpeed': 'float',
+    'actuationSettings_waveformType': 'string',
+    'imageAcquisitionSettings_picturesPerVoltage': 'int64',
+    'imageAcquisitionSettings_showVideoDuringMeasurement': 'bool',
+    'imageAcquisitionSettings_summingMode': 'string',
+    'imageAcquisitionSettings_waitBeforeCapture': 'float',
+    'secondaryDAQOutputVoltageSettings_externalAmplification': 'float',
+    'secondaryDAQOutputVoltageSettings_voltage': 'float'
+    }
+
+    properColumnNames = ['_'.join(col).strip('_') for col in [tuple([str(getProperColumnName(c)) for c in cTuple]) for cTuple in dfMetadata.columns]]
+    dfMetadata.columns = pd.Index(properColumnNames)
+    
+    for c in dfMetadata.columns:
+        s = dfMetadata[c]
+        dfMetadata[c] = pd.Series(s,dtype=column_to_dtype_dict[c])
+    
+    
+def tabulateSettingsAtPath(path):
+    """
+    Gets the settings.json files from all subdirectories in the path that and
+    tabulates them into a single xlsx and hdf5 file.
+    """
+    dfMetadata = readMeasurementSettingsAtPath(path)
 
     experimentName = os.path.split(os.path.abspath(path))[-1]
-	
+    
+    
 
     xlsxFilename = experimentName + ' - settings.xlsx'
     print xlsxFilename
     dfMetadata.to_excel(os.path.join(path, xlsxFilename))
 
-    properColumnNames = ['_'.join(col).strip('_') for col in [tuple([str(getProperColumnName(c)) for c in cTuple]) for cTuple in dfMetadata.columns]]
-    dfMetadata.columns = pd.Index(properColumnNames)
+    flattenSettingsDataFrameColumns(dfMetadata)
 
     hdf5Filename = '%s - data.hdf5' % experimentName
     print hdf5Filename
-    dfMetadata.to_hdf(os.path.join(path,hdf5Filename), 'settings')
+    dfMetadata.to_hdf(os.path.join(path,hdf5Filename), 'settings', format='table',data_columns=True)
+    
 
+def dirContainsMeasurements(path):
+    return os.path.isdir(path) and any([d for d in os.listdir(path) if os.path.isdir(os.path.join(path,d)) and dirIsMeasurementDirWithSettings(os.path.join(path,d))])
 
 
 def correctDatesInCsvFile(filePath, year, month, day, sep='\t', backup=True):
@@ -108,7 +147,7 @@ def correctDatesInCsvFile(filePath, year, month, day, sep='\t', backup=True):
 
 
 
-def convertNoImageDataFileToHDF5(path, deleteOriginal = False):
+def convertNoImageDataFileToHDF5(path, keep_original = False):
     """
     Converts a data.csv file that does not contain intensity profiles to HDF5.
     """
@@ -117,61 +156,105 @@ def convertNoImageDataFileToHDF5(path, deleteOriginal = False):
     df.drop("Intensity Profile", axis=1,inplace=True)
 
     print "saving to data.hdf5"
-    df.to_hdf(path + '/data.hdf5','measurement', complib='zlib', complevel=9)
+    df.to_hdf(path + '/data.hdf5','measurement', complib='zlib', complevel=9, format='table', data_columns=True)
     
-    if (deleteOriginal):
+    if not keep_original:
         print "delete data.csv"
         os.remove(path + '/data.csv')
 
 
-def convertOdmAnalysisFileToHDF5(path, deleteOriginal = False):
+def convertOdmAnalysisFileToHDF5(path, keep_original = True):
     print "reading odmanalysis.csv..."
     df = odm.readAnalysisData(path + '/odmanalysis.csv')
     
     print "saving to data.hdf5"
-    df.to_hdf(path + '/odmanalysis.hdf5','odmanalysis', mode="a", complib='zlib', complevel=9)
+    df.to_hdf(path + '/odmanalysis.hdf5','odmanalysis', mode="a", complib='zlib', complevel=9, format='table', data_columns=True)
     
-    if (deleteOriginal):
+    if not keep_original:
         print "delete odmanalysis.csv"
         os.remove(path + '/odmanalysis.csv')
 
 
-def getMeasurementDirsAtPath(path, recursive = False):
+def getMeasurementDirsAtPath(basePath, recursive = False):
     if recursive == True:    
-        return [os.path.join(basePath,directory) for basePath,directories,files in os.walk(path) for directory in directories if dirIsConvertibleMeasurement(os.path.join(path,basePath,directory))]
+        return [os.path.join(path,directory) for path,directories,files in os.walk(basePath) for directory in directories if dirIsConvertibleMeasurement(os.path.join(basePath,path,directory))]
     else:
-        return [d for d in os.listdir('.') if dirIsConvertibleMeasurement(d)]
+        return [d for d in os.listdir(basePath) if dirIsConvertibleMeasurement(d)]
 
 
-def correctCsvFilesAtPath(path, recursive = False, backup=True):
+def getGasSystemLogFilesAtPath(basePath):
+    return [f for f in os.listdir(basePath) if f.endswith("Gas System Log.csv")]
+
+
+
+
+
+def correctRawDataCsvFilesAtPath(path,recursive=False,keep_originals=True):
     measurementPaths = getMeasurementDirsAtPath(path,recursive=recursive)
     
-    for path in measurementPaths:
-        year, month, day = os.path.split(path)[-1][:10].split('-')
-        print "processing: " + path
+    for measurementPath in measurementPaths:
+        year, month, day = getYearMonthDayFromMeasurementDir(measurementPath)
+        print "processing: " + measurementPath
         
-        if os.path.exists(os.path.join(path,'data.csv')) and not os.path.exists(os.path.join(path, 'data.csv.old')):
-            correctDatesInCsvFile(path, 'data.csv', year, month, day, backup=backup)
+        dataCsvPath = os.path.join(measurementPath,'data.csv')
+        if os.path.exists(dataCsvPath) and not os.path.exists(dataCsvPath + ".old"):
+            correctDatesInCsvFile(dataCsvPath, year, month, day, backup=keep_originals)
             
-        if os.path.exists(os.path.join(path,'odmanalysis.csv')) and not os.path.exists(os.path.join(path,'odmanalysis.csv.old')):
-            correctDatesInCsvFile(path, 'odmanalysis.csv', year, month, day, backup=backup)
-            
+def correctOdmAnalysisCsvFilesAtPath(path,recursive=False,keep_originals=True):
+    for measurementPath in getMeasurementDirsAtPath(path,recursive=recursive):
+        year, month, day = getYearMonthDayFromMeasurementDir(measurementPath)
+                    
+        odmanalysisCsvPath = os.path.join(measurementPath,'odmanalysis.csv')
+        print "processing %s" % odmanalysisCsvPath
+        if os.path.exists(odmanalysisCsvPath) and not os.path.exists(odmanalysisCsvPath + '.old'):
+            correctDatesInCsvFile(odmanalysisCsvPath, year, month, day, backup=keep_originals,sep=",")
 
-def convertMeasurementFilesAtPathToHDF5(path, recursive = False, backup = True):
+def correctGasSystemCsvFilesAtPath(path,keep_originals=True):
+    gasSystemLogFilePaths = [os.path.join(path,f) for f in getGasSystemLogFilesAtPath(path)]
+    for gasSystemLogFilePath in gasSystemLogFilePaths:
+        if os.path.exists(gasSystemLogFilePath) and not os.path.exists(gasSystemLogFilePath + '.old'):
+            year, month, day = getYearMonthDayFromFilename(gasSystemLogFilePath)
+            correctDatesInCsvFile(gasSystemLogFilePath, year, month, day, backup=keep_originals)
+
+
+def correctAllCsvFilesAtPath(path, recursive = False, backup=True):
+    measurementPaths = getMeasurementDirsAtPath(path,recursive=recursive)
+    
+    for measurementPath in measurementPaths:
+        year, month, day = getYearMonthDayFromMeasurementDir(measurementPath)
+        print "processing: " + measurementPath
+        
+        dataCsvPath = os.path.join(measurementPath,'data.csv')
+        if os.path.exists(dataCsvPath) and not os.path.exists(dataCsvPath + ".old"):
+            correctDatesInCsvFile(dataCsvPath, year, month, day, backup=backup)
+            
+        odmanalysisCsvPath = os.path.join(measurementPath,'odmanalysis.csv')
+        if os.path.exists(odmanalysisCsvPath) and not os.path.exists(odmanalysisCsvPath + '.old'):
+            correctDatesInCsvFile(odmanalysisCsvPath, year, month, day, backup=backup,sep=",")
+    
+    gasSystemLogFilePaths = getGasSystemLogFilesAtPath(path)
+    for gasSystemLogFilePath in gasSystemLogFilePaths:
+        if os.path.exists(gasSystemLogFilePath) and not os.path.exists(gasSystemLogFilePath + '.old'):
+            year, month, day = getYearMonthDayFromFilename(gasSystemLogFilePath)
+            correctDatesInCsvFile(gasSystemLogFilePath, year, month, day, backup=backup)
+
+
+
+def convertMeasurementFilesAtPathToHDF5(path, recursive = False, keep_data_csv = False, keep_odmanalysis_csv = True):
     measurementPaths = getMeasurementDirsAtPath(path,recursive=recursive)
         
     for path in measurementPaths:
         year, month, day = os.path.split(path)[-1][:10].split('-')
         print "processing: " + path
-        if os.path.exists(os.path.join(path,'data.csv')) and not os.path.exists(os.path.join(path, 'data.csv.old')):
+        if os.path.exists(os.path.join(path,'data.csv')):
                         
             with file(path + '/settings.json') as settingsFile:
                 settingsDict = json.load(settingsFile)
                 
             if settingsDict["Image Aquisition Settings"]["picturesPerVoltage"] == 0:
-                convertNoImageDataFileToHDF5(path,deleteOriginal=True)
+                convertNoImageDataFileToHDF5(path, keep_original = keep_data_csv)
                     
                     
-        if os.path.exists(os.path.join(path,'odmanalysis.csv')) and not os.path.exists(os.path.join(path,'odmanalysis.csv.old')):
-            correctDatesInCsvFile(path, 'odmanalysis.csv', year, month, day, backup=backup)
+        if os.path.exists(os.path.join(path,'odmanalysis.csv')):
+            convertOdmAnalysisFileToHDF5(os.path.join(path,'odmanalysis.csv'), year, month, day, keep_original=keep_odmanalysis_csv)
             
