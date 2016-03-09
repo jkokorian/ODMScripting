@@ -68,10 +68,11 @@ def tabulate_settings_files(path):
 @cli.command('analyze-all-measurements', help="Analyzes all measurements at the target path with the settings from a template measurement")
 @click.argument('path', default='.', type=click.Path(exists=True))
 @click.option('--template', 'template_path', type=click.Path(exists=True), help="Path to the measurement to use as a template")
-@click.option('--template-profile/--no-template-profile','use_template_profile',default=False, help="Use the first profile of the template measurement to initialize the fit functions")
-def analyze_all_measurements(path,template_path,use_template_profile):
+@click.option('--use-template-profile/--no-use-template-profile','use_template_profile',default=False, help="Use the first profile of the template measurement to initialize the fit functions")
+@click.option('--use-template-settings/--no-use-template-settings','use_template_settings',default=True, help="Use the settings from the template measurement")
+def analyze_all_measurements(path,template_path,use_template_profile,use_template_settings):
     template_path = os.path.abspath(template_path)
-    odmanalysiswrappers.analyzeAllMeasurementsAtPath(path,template_path,use_template_profile)
+    odmanalysiswrappers.analyzeAllMeasurementsAtPath(path,template_path,use_template_profile,use_template_settings)
 
 
 

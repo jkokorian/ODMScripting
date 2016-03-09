@@ -50,9 +50,9 @@ def doTask(args):
     analyzeMeasurement(*args)
 
 
-def analyzeAllMeasurementsAtPath(path,templateMeasurementPath,useTemplateProfile=False):
-    odmSettingsFile = templateMeasurementPath + '/odmSettings.ini'
-    fitSettingsFile = templateMeasurementPath + '/fitSettings.pcl'
+def analyzeAllMeasurementsAtPath(path,templateMeasurementPath,useTemplateProfile=False,useTemplateSettings=True):
+    templateOdmSettingsFile = templateMeasurementPath + '/odmSettings.ini' if useTemplateSettings else None
+    templateFitSettingsFile = templateMeasurementPath + '/fitSettings.pcl' if useTemplateSettings else None
     referenceIPDataFile = templateMeasurementPath + '/data.csv' if useTemplateProfile else None
     
     
@@ -66,6 +66,8 @@ def analyzeAllMeasurementsAtPath(path,templateMeasurementPath,useTemplateProfile
     
     for d in dirlist:
         if os.path.abspath(d) != os.path.abspath(templateMeasurementPath):
+            odmSettingsFile = templateOdmSettingsFile if useTemplateSettings else os.path.join(d,'odmSettings.ini')
+            fitSettingsFile = templateFitSettingsFile if useTemplateSettings else os.path.join(d,'fitSettings.pcl')
             analyzeMeasurement(d,odmSettingsFile,fitSettingsFile,referenceIPDataFile)
 
 
