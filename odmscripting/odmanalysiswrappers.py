@@ -7,17 +7,8 @@ from multiprocessing import Pool
 import argparse
 import odmanalysis as odm
 import odmanalysis.gui as _gui
-import os as _os
+import fileconversions
 
-
-parser = argparse.ArgumentParser(prog="odm_analyze_all",
-                                 description="Analyzes every measurement directory inside the current folder.")
- 
-parser.add_argument("--template",dest="templateMeasurement",type=str,default=None,
-                    help="The directory that contains the fit settings that will be used for all the measurements.")
-
-parser.add_argument("--use-template-profile",dest="useTemplateProfile",type=bool,default=False,
-                    help="Use the first intensity profile from the template measurement to initialize the fit function")
 
 
 
@@ -60,12 +51,12 @@ def doTask(args):
 
 
 def analyzeAllMeasurementsAtPath(path,templateMeasurementPath,useTemplateProfile=False):
-    odmSettingsFile = templatePath + '/odmSettings.ini'
-    fitSettingsFile = templatePath + '/fitSettings.pcl'
-    referenceIPDataFile = templatePath + '/data.csv' if args.useTemplateProfile else None
+    odmSettingsFile = templateMeasurementPath + '/odmSettings.ini'
+    fitSettingsFile = templateMeasurementPath + '/fitSettings.pcl'
+    referenceIPDataFile = templateMeasurementPath + '/data.csv' if useTemplateProfile else None
     
     
-    dirlist = [os.path.join(path,d) for d in os.listdir(path) if isMeasurement(d)]
+    dirlist = [os.path.join(path,d) for d in os.listdir(path) if fileconversions.dirIsMeasurementDirWithSettings(d)]
     
     
     
@@ -74,21 +65,7 @@ def analyzeAllMeasurementsAtPath(path,templateMeasurementPath,useTemplateProfile
     #pool.close()
     
     for d in dirlist:
-        analyzeMeasurement(d,odmSettingsFile,fitSettingsFile,referenceIPDataFile)
+        if os.path.abspath(d) != os.path.abspath(templateMeasurementPath):
+            analyzeMeasurement(d,odmSettingsFile,fitSettingsFile,referenceIPDataFile)
 
 
-if __name__=="__main__":
-    
-    args = parser.parse_args()
-    
-    #templateMeasurement = r"D:\jkokorian\My Documents\_Delft\PhD\journal\2015-03-04 PM13.Tri4-C measurements\2015-03-04 16.12.03 Scripted Optical Displacement Measurement"
-    if (args.templateMeasurement is not None and _os.path.exists(os.path.abspath(args.templateMeasurement)) and _os.path.isdir(os.path.abspath(args.templateMeasurement))):
-        templateMeasurement = args.templateMeasurement
-
-    else:
-        templateMeasurement = _gui.get_dir_path()
-    
-    
-    #templateMeasurement = args.templateMeasurement
-    templatePath = os.path.abspath(templateMeasurement)
-    analyzeAllMeasurementsAtPath()

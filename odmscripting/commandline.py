@@ -71,8 +71,7 @@ def tabulate_settings_files(path):
 @click.option('--template-profile/--no-template-profile','use_template_profile',default=False, help="Use the first profile of the template measurement to initialize the fit functions")
 def analyze_all_measurements(path,template_path,use_template_profile):
     template_path = os.path.abspath(template_path)
-
-    odmanalysiswrappers.analyzeAllMeasurementsAtPath(path,templatePath,use_template_profile)
+    odmanalysiswrappers.analyzeAllMeasurementsAtPath(path,template_path,use_template_profile)
 
 
 
