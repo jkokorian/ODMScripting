@@ -5,13 +5,15 @@
 
 import json
 import uuid
+from scipy.optimize import fsolve
+import numpy as _np
 
 def logspace_cumsum(start,sum,steps):
     """
     Generate logaritmically spaced numbers such that their sum equals 'sum'.
     """
-    stopValue = fsolve(lambda stop: sum(logspace(log10(start),stop,steps)) - sum, log10(sum))[0]
-    return logspace(1,stopValue,steps)
+    stopValue = fsolve(lambda stop: _np.sum(_np.logspace(_np.log10(start),stop,steps)) - sum, _np.log10(sum))[0]
+    return _np.logspace(1,stopValue,steps)
 
 
 class ROISettings(object):
