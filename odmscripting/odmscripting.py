@@ -6,11 +6,10 @@
 import json
 import uuid
 from scipy.optimize import fsolve
-<<<<<<< HEAD
 import numpy as _np
-=======
+
 from numpy import logspace,log10,sum
->>>>>>> origin/master
+
 
 def logspace_cumsum(start,total,steps):
     """
