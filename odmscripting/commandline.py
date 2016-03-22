@@ -11,9 +11,11 @@ def cli():
 @cli.command('list-measurements', help='List all measurement in path')
 @click.argument('path', type=click.Path(exists=True))
 @click.option('--recurse/--no-recurse', default=False, help='search recursively')
-def list_measurements(path,recurse):
+@click.option('--skip-existing/--no-skip-existing','skip_existing', default=False, help="skip measurements that have already been analyzed")
+def list_measurements(path,recurse,skip_existing):
     for measurementDir in fileconversions.getMeasurementDirsAtPath(path, recursive=recurse):
-        click.echo(measurementDir)
+        if not skip_existing or not (fileconversions.isAnalyzedMeasurementDir(measurementDir)):
+            click.echo(measurementDir)
 
 @cli.command('correct-csv-dates', help="""
 corrects the date format in the target csv file. The first column should contain the date.
@@ -70,9 +72,10 @@ def tabulate_settings_files(path):
 @click.option('--template', 'template_path', type=click.Path(exists=True), help="Path to the measurement to use as a template")
 @click.option('--use-template-profile/--no-use-template-profile','use_template_profile',default=False, help="Use the first profile of the template measurement to initialize the fit functions")
 @click.option('--use-template-settings/--no-use-template-settings','use_template_settings',default=True, help="Use the settings from the template measurement")
-def analyze_all_measurements(path,template_path,use_template_profile,use_template_settings):
+@click.option('--skip-existing/--no-skip-existing','skip_existing',default=False, help="Skip measurements that have already been analyzed")
+def analyze_all_measurements(path,template_path,use_template_profile,use_template_settings,skip_existing):
     template_path = os.path.abspath(template_path)
-    odmanalysiswrappers.analyzeAllMeasurementsAtPath(path,template_path,use_template_profile,use_template_settings)
+    odmanalysiswrappers.analyzeAllMeasurementsAtPath(path,template_path,use_template_profile,use_template_settings,skip_existing)
 
 
 

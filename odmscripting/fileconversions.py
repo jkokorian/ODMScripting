@@ -10,6 +10,9 @@ def dirIsMeasurementDirWithSettings(path):
     isValid &= os.path.exists(os.path.join(path, 'settings.json'))
     return isValid
     
+def isAnalyzedMeasurementDir(path):
+    return os.path.exists(os.path.join(path,'odmanalysis.csv'))
+
 def dirIsConvertibleMeasurement(path):
     path = os.path.abspath(path)
     return path.endswith("Displacement Measurement") and (os.path.exists(os.path.join(path, 'odmanalysis.csv')) or os.path.exists(os.path.join(path, 'data.csv')))

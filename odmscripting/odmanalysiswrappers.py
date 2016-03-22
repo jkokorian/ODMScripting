@@ -16,7 +16,7 @@ def isMeasurement(d):
     isMeasurement = True
     isMeasurement &= os.path.isdir(d)
     isMeasurement &= os.path.exists(d + '/data.csv')
-    isMeasurement &= not os.path.exists(d + '/odmanalysis.csv')
+    isMeasurement &= os.path.exists(d + '/settings.json')
 
     if not isMeasurement:
         return isMeasurement
@@ -35,7 +35,6 @@ def analyzeMeasurement(path, odmSettingsFile, fitSettingsFile, referenceIPDataFi
     commonPath = os.path.abspath(os.path.split(datafile)[0])
     measurementName = os.path.split(commonPath)[1]
     
-        
     
     settings = odm.CurveFitSettings.loadFromFile(odmSettingsFile)
     df,movingPeakFitSettings,referencePeakFitSettings,measurementName = fitRawODMData(datafile,settingsFile=odmSettingsFile, fitSettingsFile=fitSettingsFile,referenceIPDataFile=referenceIPDataFile)
@@ -50,13 +49,15 @@ def doTask(args):
     analyzeMeasurement(*args)
 
 
-def analyzeAllMeasurementsAtPath(path,templateMeasurementPath,useTemplateProfile=False,useTemplateSettings=True):
+def analyzeAllMeasurementsAtPath(path,templateMeasurementPath,useTemplateProfile=False,useTemplateSettings=True,skipExisting=False):
     templateOdmSettingsFile = templateMeasurementPath + '/odmSettings.ini' if useTemplateSettings else None
     templateFitSettingsFile = templateMeasurementPath + '/fitSettings.pcl' if useTemplateSettings else None
     referenceIPDataFile = templateMeasurementPath + '/data.csv' if useTemplateProfile else None
     
     
-    dirlist = [os.path.join(path,d) for d in os.listdir(path) if fileconversions.dirIsMeasurementDirWithSettings(d)]
+    dirlist = [os.path.join(path,d) for d in os.listdir(path) if fileconversions.dirIsMeasurementDirWithSettings(d) and isMeasurement(d) and (not fileconversions.isAnalyzedMeasurementDir(path) or not skipExisting)]
+    for d in dirlist:
+        print d
     
     
     
